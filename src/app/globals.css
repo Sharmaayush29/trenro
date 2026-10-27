@@ -1,26 +1,101 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
+  --background: #F6F3ED;
   --foreground: #171717;
+  --surface: #FFFFFF;
+  --surface-warm: #F6F3ED;
+  --surface-muted: #EFE9DE;
+  --border: #E8E3D9;
+  --border-subtle: #F0ECE4;
+  --ink-black: #171717;
+  --graphite: #343434;
+  --graphite-muted: #525252;
+  --muted-olive: #72785B;
+  --muted-olive-light: #8E9674;
+  --muted-olive-dark: #585D44;
+  --warm-ivory: #F6F3ED;
+  --copper: #BD8B52;
+  --copper-light: #D4A36A;
+  --copper-dark: #9C6E38;
+  --muted-text: #737373;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-surface: var(--surface);
+  --color-surface-warm: var(--surface-warm);
+  --color-surface-muted: var(--surface-muted);
+  --color-border: var(--border);
+  --color-border-subtle: var(--border-subtle);
+  --color-ink-black: var(--ink-black);
+  --color-graphite: var(--graphite);
+  --color-graphite-muted: var(--graphite-muted);
+  --color-muted-olive: var(--muted-olive);
+  --color-muted-olive-light: var(--muted-olive-light);
+  --color-muted-olive-dark: var(--muted-olive-dark);
+  --color-warm-ivory: var(--warm-ivory);
+  --color-copper: var(--copper);
+  --color-copper-light: var(--copper-light);
+  --color-copper-dark: var(--copper-dark);
+  --color-muted-text: var(--muted-text);
+  --font-serif: "Playfair Display", Georgia, serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+/* Base styling */
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom editorial styling */
+.font-editorial {
+  font-family: var(--font-serif);
+  letter-spacing: -0.02em;
+}
+
+/* Aspect ratio helpers */
+.aspect-fashion {
+  aspect-ratio: 3 / 4;
+}
+
+/* Smooth transitions */
+* {
+  box-sizing: border-box;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #F6F3ED;
+}
+::-webkit-scrollbar-thumb {
+  background: #72785B;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #585D44;
+}
+
+/* Focus styles */
+*:focus-visible {
+  outline: 2px solid #72785B;
+  outline-offset: 2px;
+}
+
+/* Animation utilities */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
