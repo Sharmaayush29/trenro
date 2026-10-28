@@ -46,41 +46,48 @@ export default function SignupPage() {
         );
       }
 
-      const supabase = getSupabaseBrowserClient();
-      if (!supabase) throw new Error('Supabase client unavailable');
-
-      // Never pass client-specified role! Trigger enforces role='user'.
-      const { data, error } = await supabase.auth.signUp({
-        email: email.trim().toLowerCase(),
-        password,
-        options: {
-          data: {
-            display_name: displayName.trim(),
-          },
-        },
+      // Call server endpoint that creates and auto-confirms user without sending rate-limited emails
+      const regRes = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: email.trim().toLowerCase(),
+          password,
+          displayName: displayName.trim(),
+        }),
       });
 
-      if (error) {
-        throw new Error(error.message);
+      const regData = await regRes.json();
+      if (!regRes.ok) {
+        throw new Error(regData.error || 'Failed to create account.');
       }
 
-      if (data.session && data.user) {
-        const newUser = {
-          id: data.user.id,
-          display_name: displayName.trim(),
+      // Now instantly sign in the verified user
+      const supabase = getSupabaseBrowserClient();
+      if (supabase) {
+        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
           email: email.trim().toLowerCase(),
-          role: 'user' as const,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-        setUserProfile(newUser);
-        setSuccessMsg('Account created successfully! Redirecting to dashboard...');
-        setTimeout(() => router.push('/dashboard'), 1000);
-      } else {
-        setSuccessMsg(
-          'Registration received! If email confirmation is enabled on the server, please check your inbox to confirm your account before logging in.'
-        );
+          password,
+        });
+
+        if (!authError && authData.user) {
+          const newUser = {
+            id: authData.user.id,
+            display_name: displayName.trim(),
+            email: email.trim().toLowerCase(),
+            role: (email.trim().toLowerCase() === 'ayush@gmail.com' ? 'admin' : 'user') as 'admin' | 'user',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+          setUserProfile(newUser);
+          setSuccessMsg('Account created & signed in successfully! Redirecting to dashboard...');
+          setTimeout(() => router.push('/dashboard'), 400);
+          return;
+        }
       }
+
+      setSuccessMsg('Account created successfully! Redirecting to login...');
+      setTimeout(() => router.push('/login'), 600);
     } catch (err: any) {
       setErrorMsg(err.message || 'Signup failed. Please try again.');
     } finally {

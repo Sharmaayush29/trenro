@@ -24,6 +24,7 @@ import {
 
 const CATEGORIES = [
   'All',
+  'On Sale 🔥',
   'T-Shirt',
   'Shirt',
   'Trousers',
@@ -72,8 +73,10 @@ function ShopCatalogContent() {
 
   const filteredProducts = useMemo(() => {
     return products.filter((prod) => {
-      // Category filter
-      if (selectedCategory !== 'All') {
+      // Category & On Sale filter
+      if (selectedCategory === 'On Sale 🔥' || selectedCategory === 'On Sale') {
+        if (!prod.compare_at_price || prod.compare_at_price <= prod.price_inr) return false;
+      } else if (selectedCategory !== 'All') {
         const prodCat = (prod.category || '').toLowerCase();
         const selCat = selectedCategory.toLowerCase();
         if (!prodCat.includes(selCat)) return false;
@@ -385,8 +388,8 @@ function ShopCatalogContent() {
                           </span>
                         </div>
                         {product.compare_at_price && product.compare_at_price > product.price_inr && (
-                          <div className="absolute top-3 right-3 px-2 py-0.5 bg-[#72785B] text-white text-[9px] font-black uppercase tracking-wider rounded">
-                            Save {Math.round(((product.compare_at_price - product.price_inr) / product.compare_at_price) * 100)}%
+                          <div className="absolute top-3 right-3 px-2.5 py-1 bg-rose-600 text-white text-[10px] font-black uppercase tracking-wider rounded-md shadow-sm">
+                            {Math.round(((product.compare_at_price - product.price_inr) / product.compare_at_price) * 100)}% OFF
                           </div>
                         )}
                       </Link>
@@ -405,14 +408,19 @@ function ShopCatalogContent() {
                         </div>
 
                         {/* Pricing */}
-                        <div className="flex items-baseline gap-2">
+                        <div className="flex items-baseline gap-2 flex-wrap">
                           <span className="text-base font-black text-[#171717]">
                             {formatCurrencyINR(product.price_inr)}
                           </span>
                           {product.compare_at_price && product.compare_at_price > product.price_inr && (
-                            <span className="text-xs text-[#737373] line-through">
-                              {formatCurrencyINR(product.compare_at_price)}
-                            </span>
+                            <>
+                              <span className="text-xs text-[#737373] line-through font-medium">
+                                {formatCurrencyINR(product.compare_at_price)}
+                              </span>
+                              <span className="text-[10px] font-bold text-rose-600">
+                                ({Math.round(((product.compare_at_price - product.price_inr) / product.compare_at_price) * 100)}% OFF)
+                              </span>
+                            </>
                           )}
                         </div>
 

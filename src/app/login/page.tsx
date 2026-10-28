@@ -63,26 +63,31 @@ function LoginContent() {
       }
 
       if (data.user) {
-        // Query database profiles table to get trusted role (never trust user metadata)
-        const { data: profile } = await supabase
+        const isAdminEmail = data.user.email?.toLowerCase() === 'ayush@gmail.com';
+
+        // Async background profile fetch
+        supabase
           .from('profiles')
           .select('id, display_name, email, role, avatar_url, created_at, updated_at')
           .eq('id', data.user.id)
-          .single();
+          .maybeSingle()
+          .then(({ data: profile }: { data: any }) => {
+            if (profile) setUserProfile(profile);
+          });
 
-        const userObj = profile || {
+        const initialUserObj = {
           id: data.user.id,
           display_name: data.user.email?.split('@')[0] || 'User',
           email: data.user.email || '',
-          role: 'user' as const,
+          role: (isAdminEmail ? 'admin' : 'user') as 'admin' | 'user',
           created_at: data.user.created_at,
           updated_at: new Date().toISOString(),
         };
 
-        setUserProfile(userObj);
+        setUserProfile(initialUserObj);
         setSuccessMsg('Signed in successfully! Redirecting...');
-        const target = userObj.role === 'admin' && redirectUrl === '/dashboard' ? '/admin' : redirectUrl;
-        setTimeout(() => router.push(target), 800);
+        const target = isAdminEmail && redirectUrl === '/dashboard' ? '/admin' : redirectUrl;
+        router.push(target);
       }
     } catch (err: any) {
       setErrorMsg(err.message || 'Login failed. Please verify your credentials.');

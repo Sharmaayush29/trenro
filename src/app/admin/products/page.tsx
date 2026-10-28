@@ -102,6 +102,7 @@ export default function AdminProductsPage() {
 
   // File Upload Refs
   const imageFileInputRef = useRef<HTMLInputElement>(null);
+  const galleryFileInputRef = useRef<HTMLInputElement>(null);
   const videoFileInputRef = useRef<HTMLInputElement>(null);
 
   const autoGenerateSlug = (val: string) => {
@@ -205,49 +206,79 @@ export default function AdminProductsPage() {
       return;
     }
 
-    if (file.size > 10 * 1024 * 1024) {
-      alert('Image file size must be less than 10MB.');
+    if (file.size > 15 * 1024 * 1024) {
+      alert('Image file size must be less than 15MB.');
       return;
     }
 
     setIsUploadingMedia(true);
     try {
-      if (isConfigured) {
-        const supabase = getSupabaseBrowserClient();
-        if (supabase) {
-          const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-          const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
-          const filePath = `garments/${fileName}`;
+      const formData = new FormData();
+      formData.append('file', file);
 
-          const { error: uploadError } = await supabase.storage
-            .from('product-media')
-            .upload(filePath, file, { cacheControl: '3600', upsert: false });
+      const res = await fetch('/api/admin/upload-media', {
+        method: 'POST',
+        body: formData,
+      });
 
-          if (uploadError) {
-            console.error('Storage upload error:', uploadError);
-            alert(`Storage upload error: ${uploadError.message}. Ensure the 'product-media' bucket exists in your Supabase project.`);
-            return;
-          }
-
-          const { data: { publicUrl } } = supabase.storage
-            .from('product-media')
-            .getPublicUrl(filePath);
-
-          setImageUrl(publicUrl);
-          setIsDirty(true);
-          setFeedback({ type: 'success', message: 'Image uploaded to product-media storage successfully.' });
-          setTimeout(() => setFeedback(null), 3000);
-          return;
-        }
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to upload image.');
       }
 
-      alert('Database storage is not configured. Please configure your Supabase credentials in .env.local or enter a direct image URL.');
+      setImageUrl(data.publicUrl);
+      setIsDirty(true);
+      setFeedback({ type: 'success', message: 'Primary cover image uploaded to product-media storage successfully!' });
+      setTimeout(() => setFeedback(null), 3000);
     } catch (err: any) {
       alert(`Upload failed: ${err.message || 'Unknown error'}`);
     } finally {
       setIsUploadingMedia(false);
       if (imageFileInputRef.current) {
         imageFileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleGalleryFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload a valid image file (JPEG, PNG, WebP).');
+      return;
+    }
+
+    if (file.size > 15 * 1024 * 1024) {
+      alert('Image file size must be less than 15MB.');
+      return;
+    }
+
+    setIsUploadingMedia(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/admin/upload-media', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to upload gallery image.');
+      }
+
+      setAdditionalImages((prev) => (prev ? `${prev.trim()}\n${data.publicUrl}` : data.publicUrl));
+      setIsDirty(true);
+      setFeedback({ type: 'success', message: 'Gallery image uploaded successfully!' });
+      setTimeout(() => setFeedback(null), 3000);
+    } catch (err: any) {
+      alert(`Gallery upload failed: ${err.message || 'Unknown error'}`);
+    } finally {
+      setIsUploadingMedia(false);
+      if (galleryFileInputRef.current) {
+        galleryFileInputRef.current.value = '';
       }
     }
   };
@@ -678,24 +709,29 @@ export default function AdminProductsPage() {
                 <div className="md:col-span-7 space-y-5 text-xs">
                   {/* Primary Cover Image URL */}
                   <div className="space-y-1.5">
-                    <label className="font-bold text-[#171717] uppercase tracking-wider block">
-                      Primary Cover Image URL *
-                    </label>
+                    <div className="flex items-center justify-between">
+                      <label className="font-bold text-[#171717] uppercase tracking-wider block">
+                        Primary Cover Image (Main Photo) *
+                      </label>
+                      <span className="text-[10px] text-[#BD8B52] font-semibold">Featured on catalog & cards</span>
+                    </div>
                     <div className="flex gap-2">
                       <input
                         type="url"
                         required
                         value={imageUrl}
                         onChange={(e) => { setImageUrl(e.target.value); setIsDirty(true); }}
-                        placeholder="https://images.unsplash.com/... or data:image/..."
+                        placeholder="Click Upload File to choose from your device, or paste a URL..."
                         className="w-full px-4 py-2.5 bg-[#F6F3ED] border border-[#E8E3D9] rounded-xl text-xs text-[#171717] focus:bg-white focus:outline-none"
                       />
                       <button
                         type="button"
+                        disabled={isUploadingMedia}
                         onClick={() => imageFileInputRef.current?.click()}
-                        className="px-4 py-2 bg-[#F6F3ED] hover:bg-[#E8E3D9] border border-[#E8E3D9] rounded-xl text-[10px] font-bold uppercase tracking-wider text-[#171717] flex items-center gap-1.5 shrink-0"
+                        className="px-4 py-2 bg-[#171717] hover:bg-[#BD8B52] disabled:opacity-50 text-white rounded-xl text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer shadow-sm"
                       >
-                        <Upload className="w-3.5 h-3.5" /> Upload File
+                        <Upload className="w-3.5 h-3.5 text-[#BD8B52]" />
+                        {isUploadingMedia ? 'Uploading...' : 'Upload Cover Photo'}
                       </button>
                     </div>
                     <input
@@ -709,15 +745,32 @@ export default function AdminProductsPage() {
 
                   {/* Additional Gallery Image URLs */}
                   <div className="space-y-1.5">
-                    <label className="font-bold text-[#171717] uppercase tracking-wider block">
-                      Additional Gallery Image URLs (One Per Line)
-                    </label>
+                    <div className="flex items-center justify-between">
+                      <label className="font-bold text-[#171717] uppercase tracking-wider block">
+                        Additional Gallery Photos (Multi-Angle Looks)
+                      </label>
+                      <button
+                        type="button"
+                        disabled={isUploadingMedia}
+                        onClick={() => galleryFileInputRef.current?.click()}
+                        className="px-3 py-1 bg-[#F6F3ED] hover:bg-[#E8E3D9] border border-[#E8E3D9] rounded-lg text-[10px] font-bold uppercase tracking-wider text-[#171717] inline-flex items-center gap-1 cursor-pointer transition-colors"
+                      >
+                        <Upload className="w-3 h-3 text-[#72785B]" /> + Add Gallery Photo
+                      </button>
+                    </div>
                     <textarea
                       rows={3}
                       value={additionalImages}
                       onChange={(e) => { setAdditionalImages(e.target.value); setIsDirty(true); }}
-                      placeholder="https://images.unsplash.com/photo-1...&#10;https://images.unsplash.com/photo-2..."
+                      placeholder="Upload gallery photos using the button above, or paste one image URL per line..."
                       className="w-full p-4 bg-[#F6F3ED] border border-[#E8E3D9] rounded-xl text-xs font-mono text-[#171717] leading-relaxed focus:bg-white focus:outline-none"
+                    />
+                    <input
+                      ref={galleryFileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleGalleryFileUpload}
+                      className="hidden"
                     />
                     <span className="text-[10px] text-[#737373]">Provide front, side, collar detail, and back drape views.</span>
                   </div>
@@ -791,6 +844,21 @@ export default function AdminProductsPage() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
                 <div className="space-y-1">
                   <label className="font-bold text-[#171717] uppercase tracking-wider block">
+                    Original Price / MRP (INR)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={compareAtPrice}
+                    onChange={(e) => { setCompareAtPrice(Number(e.target.value)); setIsDirty(true); }}
+                    className="w-full px-4 py-2.5 bg-[#F6F3ED] border border-[#E8E3D9] rounded-xl text-xs font-bold text-[#171717] focus:bg-white focus:outline-none"
+                    placeholder="e.g. 500"
+                  />
+                  <span className="text-[10px] text-[#737373]">Base MRP (shown with strike-through).</span>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-[#171717] uppercase tracking-wider block">
                     Customer Selling Price (INR) *
                   </label>
                   <input
@@ -800,22 +868,9 @@ export default function AdminProductsPage() {
                     value={priceInr}
                     onChange={(e) => { setPriceInr(Number(e.target.value)); setIsDirty(true); }}
                     className="w-full px-4 py-2.5 bg-[#F6F3ED] border border-[#E8E3D9] rounded-xl text-xs font-black text-[#171717] focus:bg-white focus:outline-none"
+                    placeholder="e.g. 460"
                   />
-                  <span className="text-[10px] text-[#737373]">Amount charged at checkout.</span>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="font-bold text-[#171717] uppercase tracking-wider block">
-                    Compare-At Price (MRP)
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    value={compareAtPrice}
-                    onChange={(e) => { setCompareAtPrice(Number(e.target.value)); setIsDirty(true); }}
-                    className="w-full px-4 py-2.5 bg-[#F6F3ED] border border-[#E8E3D9] rounded-xl text-xs text-[#737373] focus:bg-white focus:outline-none"
-                  />
-                  <span className="text-[10px] text-[#737373]">Shown with a strike-through.</span>
+                  <span className="text-[10px] text-[#737373]">Real price charged at checkout.</span>
                 </div>
 
                 <div className="space-y-1">
@@ -828,10 +883,67 @@ export default function AdminProductsPage() {
                     value={costPrice}
                     onChange={(e) => { setCostPrice(Number(e.target.value)); setIsDirty(true); }}
                     className="w-full px-4 py-2.5 bg-[#F6F3ED] border border-[#E8E3D9] rounded-xl text-xs text-[#171717] focus:bg-white focus:outline-none"
+                    placeholder="e.g. 200"
                   />
                   <span className="text-[10px] text-[#737373]">Fabric + Cutting + Packaging cost.</span>
                 </div>
               </div>
+
+              {/* Quick Discount Calculator Chips */}
+              {compareAtPrice > 0 && (
+                <div className="p-4 bg-[#FDFCFB] border border-[#E8E3D9] rounded-2xl space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-[#171717] uppercase tracking-wider">
+                      Apply Quick Discount % on MRP (₹{compareAtPrice})
+                    </span>
+                    <span className="text-[10px] text-[#737373]">Auto-calculates selling price</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {[5, 10, 15, 20, 25, 30, 40, 50].map((pct) => {
+                      const calculatedPrice = Math.round(compareAtPrice * (1 - pct / 100));
+                      const isSelected = priceInr === calculatedPrice;
+
+                      return (
+                        <button
+                          key={pct}
+                          type="button"
+                          onClick={() => {
+                            setPriceInr(calculatedPrice);
+                            setIsDirty(true);
+                          }}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-rose-600 text-white shadow-sm ring-2 ring-rose-400'
+                              : 'bg-white border border-[#E8E3D9] text-[#171717] hover:border-rose-400 hover:text-rose-600'
+                          }`}
+                        >
+                          {pct}% OFF (₹{calculatedPrice})
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Live Customer Price Tag Preview */}
+              {compareAtPrice > priceInr ? (
+                <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-[#737373] line-through font-mono font-medium">
+                      ₹{compareAtPrice}
+                    </span>
+                    <span className="text-2xl font-black text-[#171717]">
+                      ₹{priceInr}
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-wider bg-rose-600 text-white shadow-xs">
+                      {Math.round(((compareAtPrice - priceInr) / compareAtPrice) * 100)}% OFF
+                    </span>
+                  </div>
+                  <span className="text-xs font-bold text-emerald-800">
+                    Client saves ₹{compareAtPrice - priceInr}! Featured under "On Sale" filter.
+                  </span>
+                </div>
+              ) : null}
 
               {/* Real-time Profit & Margin Card */}
               <div className="p-6 bg-[#F6F3ED] border border-[#E8E3D9] rounded-2xl grid grid-cols-1 sm:grid-cols-3 gap-6">

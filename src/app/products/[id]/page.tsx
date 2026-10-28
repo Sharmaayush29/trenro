@@ -202,14 +202,22 @@ function ProductDetailContent({ params }: PageProps) {
             )}
 
             {/* Pricing */}
-            <div className="pt-2 flex items-baseline gap-3">
+            <div className="pt-2 flex items-baseline gap-3 flex-wrap">
               <span className="text-3xl font-black text-[#171717]">
                 {formatCurrencyINR(product.price_inr)}
               </span>
               {product.compare_at_price && product.compare_at_price > product.price_inr && (
-                <span className="text-base text-[#737373] line-through font-medium">
-                  {formatCurrencyINR(product.compare_at_price)}
-                </span>
+                <>
+                  <span className="text-base text-[#737373] line-through font-medium">
+                    {formatCurrencyINR(product.compare_at_price)}
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-wider bg-rose-600 text-white shadow-xs">
+                    {Math.round(((product.compare_at_price - product.price_inr) / product.compare_at_price) * 100)}% OFF
+                  </span>
+                  <span className="text-xs font-bold text-rose-700">
+                    Save {formatCurrencyINR(product.compare_at_price - product.price_inr)}
+                  </span>
+                </>
               )}
               <span className="text-xs text-emerald-700 font-bold bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
                 Inclusive of all taxes

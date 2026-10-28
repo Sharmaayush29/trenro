@@ -48,10 +48,13 @@ export async function GET() {
     .order('created_at', { ascending: false });
 
   if (error) {
+    if (error.message?.includes('schema cache') || error.message?.includes('does not exist')) {
+      return NextResponse.json({ coupons: [], tableMissing: true });
+    }
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ coupons: coupons || [] });
+  return NextResponse.json({ coupons: coupons || [], tableMissing: false });
 }
 
 // POST: Create a new coupon

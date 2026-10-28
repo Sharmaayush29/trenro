@@ -21,6 +21,7 @@ import { formatCurrencyINR } from '@/lib/utils/formatters';
 export default function AdminCouponsPage() {
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
+  const [tableMissing, setTableMissing] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // Modal State
@@ -45,6 +46,10 @@ export default function AdminCouponsPage() {
       const data = await res.json();
       if (res.ok) {
         setCoupons(data.coupons || []);
+        setTableMissing(!!data.tableMissing);
+        if (data.tableMissing) {
+          setFeedback(null);
+        }
       } else {
         setFeedback({ type: 'error', message: data.error || 'Failed to load coupons from database.' });
       }
@@ -180,6 +185,54 @@ export default function AdminCouponsPage() {
           </button>
         </div>
       </div>
+
+      {/* Missing Table Activation Helper */}
+      {tableMissing && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 space-y-4 text-xs text-amber-900 shadow-xs">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <strong className="text-sm font-bold block text-amber-950">
+                Coupons Table Activation Required
+              </strong>
+              <p className="text-xs text-amber-800">
+                To create and apply voucher codes, activate the coupons table in your Supabase SQL Editor. Click the button to copy the 1-click script.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                const sql = `CREATE TABLE IF NOT EXISTS public.coupons (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  code TEXT NOT NULL UNIQUE,
+  name TEXT NOT NULL,
+  discount_type TEXT NOT NULL CHECK (discount_type IN ('percentage', 'fixed')),
+  discount_value NUMERIC NOT NULL CHECK (discount_value > 0),
+  min_order_subtotal NUMERIC NOT NULL DEFAULT 0,
+  max_discount_cap NUMERIC,
+  starts_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  expires_at TIMESTAMPTZ,
+  total_redemption_limit INTEGER,
+  current_redemptions INTEGER NOT NULL DEFAULT 0,
+  per_customer_limit INTEGER DEFAULT 1,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  is_automatic BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.coupons ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public can view active coupons" ON public.coupons FOR SELECT USING (is_active = true);
+CREATE POLICY "Admins can manage coupons" ON public.coupons FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());`;
+                navigator.clipboard.writeText(sql);
+                alert('Coupons SQL copied to clipboard! Paste it into your Supabase Dashboard SQL Editor.');
+              }}
+              className="px-4 py-2 bg-amber-900 hover:bg-amber-800 text-white font-bold rounded-xl text-xs uppercase tracking-wider shrink-0 cursor-pointer shadow-sm transition-colors"
+            >
+              Copy SQL Script
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Feedback Alerts */}
       {feedback && (
