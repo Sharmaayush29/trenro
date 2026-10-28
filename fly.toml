@@ -9,6 +9,8 @@ primary_region = 'ams'
 [build]
 
 [env]
+  HOSTNAME = "0.0.0.0"
+  PORT = "3000"
   NEXT_PUBLIC_SUPABASE_URL = "https://vocmdrglskcxzjqdbqvz.supabase.co"
   NEXT_PUBLIC_SUPABASE_ANON_KEY = "sb_publishable_FAZpjIO2SWm5k8N6Ht-0iA_N6O5QPqH"
   NEXT_PUBLIC_APP_URL = "https://trenro.fly.dev"

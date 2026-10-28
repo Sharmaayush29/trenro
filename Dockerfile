@@ -40,11 +40,14 @@ RUN npm prune --omit=dev
 # Final stage for app image
 FROM base
 
+ENV HOSTNAME="0.0.0.0"
+ENV PORT="3000"
+
 # Copy built application
 COPY --from=build /app /app
 
-# Entrypoint sets up the container.
-ENTRYPOINT [ "/app/docker-entrypoint.js" ]
+# Entrypoint sets up the container with node directly
+ENTRYPOINT [ "node", "/app/docker-entrypoint.js" ]
 
 # Start the server by default, this can be overwritten at runtime
 EXPOSE 3000
