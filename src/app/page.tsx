@@ -29,33 +29,33 @@ const CATEGORY_PILLARS = [
     name: 'Heavyweight T-Shirts',
     categoryQuery: 'T-Shirt',
     gsm: '240 – 280 GSM',
-    image: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80',
     description: 'Combed Indian cotton jersey with drop-shoulder cut that never sags.',
-    count: '6 Styles',
+    count: 'Original Cut',
+    accentColor: '#BD8B52',
   },
   {
     name: 'Camp-Collar Shirts',
     categoryQuery: 'Shirt',
     gsm: 'Pure Flax Linen & Cotton',
-    image: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=800&auto=format&fit=crop&q=80',
     description: 'Breathable resort weaves, cuban collars, and textured waffle knits.',
-    count: '5 Styles',
+    count: 'Resort Weave',
+    accentColor: '#72785B',
   },
   {
     name: 'Gurkha & Chino Trousers',
     categoryQuery: 'Trousers',
     gsm: 'Tailored Suiting Twill',
-    image: 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=800&auto=format&fit=crop&q=80',
     description: 'Double forward pleats, side adjusters, and peach-finish straight drapes.',
-    count: '4 Styles',
+    count: 'Pleated Fit',
+    accentColor: '#A3743E',
   },
   {
     name: 'Outerwear & Jackets',
     categoryQuery: 'Jacket',
     gsm: '14oz Raw Denim & Canvas',
-    image: 'https://images.unsplash.com/photo-1576995853123-5a10305d93c0?w=800&auto=format&fit=crop&q=80',
     description: 'Stone-washed vintage truckers, utility overshirts, and chore coats.',
-    count: '3 Styles',
+    count: 'Structured',
+    accentColor: '#5C6B73',
   },
 ];
 
@@ -160,35 +160,61 @@ export default function HomePage() {
 
             {/* Right Hero Feature Showcase */}
             <div className="lg:col-span-5 relative">
-              <div className="relative aspect-fashion max-w-md mx-auto rounded-3xl overflow-hidden border border-[#333] shadow-2xl bg-[#262626]">
-                <Image
-                  src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=1000&auto=format&fit=crop&q=80"
-                  alt="TRENRO Menswear Campaign"
-                  fill
-                  priority
-                  className="object-cover"
-                  sizes="(max-width: 1024px) 100vw, 40vw"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
-
-                {/* Floating Garment Spec Card */}
-                <div className="absolute bottom-5 left-5 right-5 bg-[#171717]/95 backdrop-blur-md border border-white/10 p-5 rounded-2xl text-white space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-[#BD8B52]">
-                      Signature Silhouette
-                    </span>
-                    <span className="text-xs font-mono font-bold text-white">₹1,299</span>
+              <div className="relative aspect-fashion max-w-md mx-auto rounded-3xl overflow-hidden border border-[#333] shadow-2xl bg-[#1A1A1A] flex flex-col justify-between p-8 text-white">
+                {products[0]?.image_url ? (
+                  <>
+                    <Image
+                      src={products[0].image_url}
+                      alt={products[0].name}
+                      fill
+                      priority
+                      className="object-cover"
+                      sizes="(max-width: 1024px) 100vw, 40vw"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
+                    <div className="absolute bottom-5 left-5 right-5 bg-[#171717]/95 backdrop-blur-md border border-white/10 p-5 rounded-2xl text-white space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-[#BD8B52]">
+                          Latest Release
+                        </span>
+                        <span className="text-xs font-mono font-bold text-white">{formatCurrencyINR(products[0].price_inr)}</span>
+                      </div>
+                      <h4 className="text-sm font-bold text-white leading-snug">
+                        {products[0].name}
+                      </h4>
+                      <div className="flex items-center justify-between pt-1 text-[11px] text-[#A3A3A3]">
+                        <span>{products[0].category}</span>
+                        <Link href="/shop" className="text-xs text-[#F6F3ED] font-bold hover:underline inline-flex items-center gap-1">
+                          Shop Fit <ChevronRight className="w-3 h-3" />
+                        </Link>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="relative z-10 flex flex-col justify-between h-full space-y-8">
+                    <div className="flex items-center justify-between border-b border-[#333] pb-4">
+                      <span className="text-xs font-mono uppercase tracking-widest text-[#BD8B52]">TRENRO ATELIER</span>
+                      <span className="text-[10px] uppercase font-bold tracking-widest px-2.5 py-0.5 rounded-full bg-[#BD8B52]/10 text-[#BD8B52] border border-[#BD8B52]/20">EDITION 2026</span>
+                    </div>
+                    <div className="space-y-4 my-auto">
+                      <div className="w-16 h-16 rounded-2xl bg-[#262626] border border-[#BD8B52]/30 flex items-center justify-center text-2xl font-black text-[#BD8B52]">
+                        TR
+                      </div>
+                      <h3 className="text-2xl sm:text-3xl font-black tracking-tight uppercase leading-tight">
+                        CRAFTED FOR THE CONTEMPORARY INDIAN SILHOUETTE
+                      </h3>
+                      <p className="text-xs text-[#A3A3A3] leading-relaxed">
+                        Every piece in our catalog is engineered with heavyweight Indian combed cottons, European linen weaves, and tailored drape proportions.
+                      </p>
+                    </div>
+                    <div className="pt-4 border-t border-[#333] flex items-center justify-between text-xs text-[#737373]">
+                      <span>New Drops Launching Soon</span>
+                      <Link href="/shop" className="text-white font-bold hover:text-[#BD8B52] transition-colors inline-flex items-center gap-1">
+                        View Store <ChevronRight className="w-3.5 h-3.5" />
+                      </Link>
+                    </div>
                   </div>
-                  <h4 className="text-sm font-bold text-white leading-snug">
-                    TRENRO Relaxed Olive Cuban Collar Resort Shirt
-                  </h4>
-                  <div className="flex items-center justify-between pt-1 text-[11px] text-[#A3A3A3]">
-                    <span>Breathable Linen-Cotton Blend</span>
-                    <Link href="/shop?category=Shirt" className="text-xs text-[#F6F3ED] font-bold hover:underline inline-flex items-center gap-1">
-                      Shop Fit <ChevronRight className="w-3 h-3" />
-                    </Link>
-                  </div>
-                </div>
+                )}
               </div>
             </div>
           </div>
@@ -215,41 +241,72 @@ export default function HomePage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {CATEGORY_PILLARS.map((col) => (
-            <Link
-              key={col.name}
-              href={`/shop?category=${encodeURIComponent(col.categoryQuery)}`}
-              className="group bg-[#FFFFFF] border border-[#E8E3D9] rounded-3xl overflow-hidden hover:border-[#171717] hover:shadow-lg transition-all duration-300 flex flex-col justify-between"
-            >
-              <div className="relative aspect-fashion bg-[#F6F3ED] overflow-hidden">
-                <Image
-                  src={col.image}
-                  alt={col.name}
-                  fill
-                  className="object-cover transition-transform duration-700 group-hover:scale-105"
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                />
-                <div className="absolute top-3 left-3 px-2.5 py-1 bg-[#171717]/85 backdrop-blur-xs text-white text-[9px] font-bold uppercase tracking-wider rounded">
-                  {col.gsm}
-                </div>
-                <div className="absolute bottom-3 right-3 px-2.5 py-1 bg-white/90 backdrop-blur-xs text-[#171717] text-[9px] font-bold uppercase tracking-wider rounded">
-                  {col.count}
-                </div>
-              </div>
+          {CATEGORY_PILLARS.map((col) => {
+            const categoryProduct = products.find(
+              (p) => p.category?.toLowerCase() === col.categoryQuery.toLowerCase() && p.image_url
+            );
 
-              <div className="p-5 space-y-1.5">
-                <h3 className="font-bold text-base text-[#171717] group-hover:text-[#72785B] transition-colors">
-                  {col.name}
-                </h3>
-                <p className="text-xs text-[#737373] line-clamp-2 leading-relaxed">
-                  {col.description}
-                </p>
-                <div className="pt-2 flex items-center text-xs font-bold text-[#171717] group-hover:translate-x-1 transition-transform">
-                  Browse Garments <ArrowRight className="w-3.5 h-3.5 ml-1 text-[#72785B]" />
+            return (
+              <Link
+                key={col.name}
+                href={`/shop?category=${encodeURIComponent(col.categoryQuery)}`}
+                className="group bg-[#FFFFFF] border border-[#E8E3D9] rounded-3xl overflow-hidden hover:border-[#171717] hover:shadow-lg transition-all duration-300 flex flex-col justify-between"
+              >
+                <div className="relative aspect-fashion bg-[#171717] overflow-hidden flex flex-col justify-between p-6">
+                  {categoryProduct?.image_url ? (
+                    <>
+                      <Image
+                        src={categoryProduct.image_url}
+                        alt={categoryProduct.name}
+                        fill
+                        className="object-cover transition-transform duration-700 group-hover:scale-105"
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                      />
+                      <div className="absolute top-3 left-3 px-2.5 py-1 bg-[#171717]/85 backdrop-blur-xs text-white text-[9px] font-bold uppercase tracking-wider rounded">
+                        {col.gsm}
+                      </div>
+                      <div className="absolute bottom-3 right-3 px-2.5 py-1 bg-white/90 backdrop-blur-xs text-[#171717] text-[9px] font-bold uppercase tracking-wider rounded">
+                        {col.count}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="relative z-10 flex flex-col justify-between h-full text-white">
+                      <div className="flex items-center justify-between">
+                        <span className="px-2.5 py-1 bg-white/10 backdrop-blur-xs text-white text-[9px] font-bold uppercase tracking-wider rounded border border-white/10">
+                          {col.gsm}
+                        </span>
+                        <span className="text-[10px] font-mono text-[#BD8B52]">TRENRO</span>
+                      </div>
+                      <div className="space-y-2 my-auto py-8 text-center">
+                        <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mx-auto text-[#BD8B52] group-hover:scale-110 transition-transform">
+                          <Layers className="w-5 h-5" />
+                        </div>
+                        <h4 className="font-black text-sm uppercase tracking-wider text-white">
+                          {col.name}
+                        </h4>
+                      </div>
+                      <div className="text-[10px] text-[#A3A3A3] flex items-center justify-between pt-2 border-t border-white/10">
+                        <span>{col.count}</span>
+                        <span className="text-[#BD8B52] font-bold group-hover:underline">Explore →</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-            </Link>
-          ))}
+
+                <div className="p-5 space-y-1.5">
+                  <h3 className="font-bold text-base text-[#171717] group-hover:text-[#72785B] transition-colors">
+                    {col.name}
+                  </h3>
+                  <p className="text-xs text-[#737373] line-clamp-2 leading-relaxed">
+                    {col.description}
+                  </p>
+                  <div className="pt-2 flex items-center text-xs font-bold text-[#171717] group-hover:translate-x-1 transition-transform">
+                    Browse Garments <ArrowRight className="w-3.5 h-3.5 ml-1 text-[#72785B]" />
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       </section>
 
@@ -470,14 +527,26 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="lg:col-span-5 relative aspect-square rounded-2xl overflow-hidden border border-[#E8E3D9] bg-[#F6F3ED]">
-            <Image
-              src="https://images.unsplash.com/photo-1552374196-1ab2a1c593e8?w=800&auto=format&fit=crop&q=80"
-              alt="TRENRO Atelier Tailoring"
-              fill
-              className="object-cover"
-              sizes="(max-width: 1024px) 100vw, 40vw"
-            />
+          <div className="lg:col-span-5 relative aspect-square rounded-2xl overflow-hidden border border-[#E8E3D9] bg-[#171717] p-8 sm:p-10 text-white flex flex-col justify-between shadow-lg">
+            <div className="flex items-center justify-between border-b border-white/10 pb-4">
+              <span className="text-[10px] font-mono tracking-widest text-[#BD8B52] uppercase">ATELIER ARCHIVE</span>
+              <span className="text-[10px] font-bold tracking-widest uppercase text-[#737373]">EST. 2026</span>
+            </div>
+            <div className="space-y-4 my-auto">
+              <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-[#BD8B52] text-xl font-black">
+                TR
+              </div>
+              <h3 className="text-xl sm:text-2xl font-black tracking-tight uppercase leading-snug">
+                100% INDIAN COTTONS & EUROPEAN FLAX
+              </h3>
+              <p className="text-xs text-[#A3A3A3] leading-relaxed">
+                Zero polyester blends. Every single thread, double-welt pocket, and horn button is sourced responsibly and constructed to last season after season.
+              </p>
+            </div>
+            <div className="pt-4 border-t border-white/10 flex items-center justify-between text-xs text-[#BD8B52] font-bold">
+              <span>Authentic Quality Guarantee</span>
+              <span>100% Pure Fabrics</span>
+            </div>
           </div>
         </div>
       </section>

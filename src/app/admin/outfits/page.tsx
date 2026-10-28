@@ -56,7 +56,7 @@ export default function AdminOutfitsPage() {
     setTitle('');
     setSlug('');
     setDescription('');
-    setCoverImageUrl('https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800&auto=format&fit=crop&q=80');
+    setCoverImageUrl('');
     setVideoUrl('');
     setOccasion('College');
     setStyle('Streetwear');

@@ -140,8 +140,12 @@ export default function DashboardOverviewPage() {
             ))}
           </div>
         ) : (
-          <div className="p-8 text-center text-xs text-[#737373]">
-            No matching outfits found. Try adjusting your preferences.
+          <div className="p-10 text-center space-y-3 bg-[#FDFCFB] border border-[#E5E0D8] rounded-xl">
+            <Sparkles className="w-6 h-6 text-[#BD8B52] mx-auto" />
+            <h4 className="font-bold text-sm text-[#171717]">New Studio Looks Arriving Soon</h4>
+            <p className="text-xs text-[#737373] max-w-sm mx-auto">
+              Our studio team is preparing fresh seasonal drops. Curated looks matching your style profile will appear here automatically.
+            </p>
           </div>
         )}
       </section>

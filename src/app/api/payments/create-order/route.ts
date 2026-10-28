@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRazorpayOrder, getRazorpayConfig } from '@/lib/payments/razorpay';
 import { createAdminClient, createClient } from '@/lib/supabase/server';
-import { SAMPLE_PRODUCTS } from '@/lib/data/mock-data';
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,10 +17,15 @@ export async function POST(req: NextRequest) {
     // SERVER-SIDE PRICE CALCULATION — NEVER TRUST CLIENT-SUPPLIED TOTAL!
     let serverSubtotal = 0;
     const validatedItems = [];
+    const supabase = createAdminClient() || (await createClient());
 
     for (const item of items) {
-      const dbProduct = SAMPLE_PRODUCTS.find((p) => p.id === item.id);
-      const unitPrice = dbProduct ? dbProduct.price_inr : Number(item.price_inr) || 1299;
+      let dbProduct: any = null;
+      if (supabase) {
+        const { data } = await supabase.from('products').select('*').eq('id', item.id).maybeSingle();
+        dbProduct = data;
+      }
+      const unitPrice = dbProduct ? Number(dbProduct.price_inr) : Number(item.price_inr) || 1299;
       const quantity = Math.max(1, Math.min(10, Number(item.quantity) || 1));
 
       serverSubtotal += unitPrice * quantity;

@@ -18,7 +18,6 @@ export default function TrendsPage() {
       publicationDate: 'October 20, 2026',
       excerpt:
         'Streetwear has shifted from loud brand logos to structural fabric density. 240+ GSM cotton drop-shoulder tees paired with multi-pocket cargo pants.',
-      coverImage: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=1000&auto=format&fit=crop&q=80',
       keyRules: [
         'Choose structure over cling: Heavyweight cotton holds boxy architectural lines',
         'Stack utility pockets: Tapered cargos prevent the lower leg from ballooning',
@@ -33,7 +32,6 @@ export default function TrendsPage() {
       publicationDate: 'October 22, 2026',
       excerpt:
         'When wearing only black, grey, or ecru, texture becomes your color palette. Waffle knits, brushed cotton, and subtle ribbed fabrics replace loud graphics.',
-      coverImage: 'https://images.unsplash.com/photo-1516826957135-700dedea698c?w=1000&auto=format&fit=crop&q=80',
       keyRules: [
         'Mix tactile surfaces: Pair knit cotton tops with structured twill chinos',
         'Keep branding minimal or non-existent',
@@ -48,7 +46,6 @@ export default function TrendsPage() {
       publicationDate: 'October 24, 2026',
       excerpt:
         'The stiff dress shirt is taking a back seat to breathable, camp-collar and resort shirts worn unbuttoned over ribbed tank tops or plain crew-necks.',
-      coverImage: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=1000&auto=format&fit=crop&q=80',
       keyRules: [
         'Leave the top two buttons undone to elongate the neck',
         'Earth tones (olive, khaki, terracotta) shine with Indian wheatish skin tones',
@@ -63,7 +60,6 @@ export default function TrendsPage() {
       publicationDate: 'October 19, 2026',
       excerpt:
         'Mediterranean tailoring elements like high-rise double-pleated trousers with built-in side adjusters deliver effortless vintage sophistication.',
-      coverImage: 'https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?w=1000&auto=format&fit=crop&q=80',
       keyRules: [
         'High-waisted trousers visually elongate your leg-to-torso ratio',
         'No socks with loafers or espadrilles for relaxed Italian sprezzatura',
@@ -160,12 +156,30 @@ export default function TrendsPage() {
                 </div>
 
                 <div className="lg:col-span-5">
-                  <div className="aspect-[4/3] rounded-xl overflow-hidden bg-[#F5F1E8]">
-                    <img
-                      src={trend.coverImage}
-                      alt={trend.title}
-                      className="w-full h-full object-cover"
-                    />
+                  <div className="aspect-[4/3] rounded-2xl overflow-hidden bg-[#171717] p-6 sm:p-8 flex flex-col justify-between text-white border border-[#262626] shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-mono tracking-widest uppercase text-[#BD8B52]">
+                        {trend.category}
+                      </span>
+                      <span className="text-[10px] font-bold tracking-widest text-[#737373] uppercase">
+                        ESSAY 0{filteredTrends.indexOf(trend) + 1}
+                      </span>
+                    </div>
+                    <div className="space-y-2 my-auto">
+                      <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-[#BD8B52]">
+                        <Layers className="w-5 h-5" />
+                      </div>
+                      <h3 className="text-lg font-black tracking-tight uppercase leading-snug">
+                        {trend.title}
+                      </h3>
+                      <p className="text-xs text-[#A3A3A3] line-clamp-2">
+                        {trend.excerpt}
+                      </p>
+                    </div>
+                    <div className="pt-3 border-t border-white/10 flex items-center justify-between text-[11px] text-[#BD8B52] font-bold">
+                      <span>TRENRO Editorial</span>
+                      <span>Verified Silhouette</span>
+                    </div>
                   </div>
                 </div>
               </div>

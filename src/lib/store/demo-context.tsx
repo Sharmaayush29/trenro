@@ -115,20 +115,31 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       if (supabase) {
         // Authenticated Session Verification
         const fetchUserProfile = async (userId: string, email?: string) => {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('id, display_name, email, role, avatar_url, created_at, updated_at')
-            .eq('id', userId)
-            .single();
+          try {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('id, display_name, email, role, avatar_url, created_at, updated_at')
+              .eq('id', userId)
+              .maybeSingle();
 
-          if (profile) {
-            setUser(profile);
-          } else {
+            if (profile) {
+              setUser(profile);
+            } else {
+              setUser({
+                id: userId,
+                display_name: email?.split('@')[0] || 'User',
+                email: email || '',
+                role: email?.toLowerCase() === 'ayush@gmail.com' ? 'admin' : 'user',
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              });
+            }
+          } catch {
             setUser({
               id: userId,
               display_name: email?.split('@')[0] || 'User',
               email: email || '',
-              role: 'user',
+              role: email?.toLowerCase() === 'ayush@gmail.com' ? 'admin' : 'user',
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             });

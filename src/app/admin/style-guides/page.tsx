@@ -30,7 +30,7 @@ export default function AdminStyleGuidesPage() {
     setSlug('');
     setExcerpt('');
     setContent('### Introduction\n\nWrite editorial fashion advice here...\n\n#### Key Rules\n- Rule 1\n- Rule 2');
-    setCoverImageUrl('https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=1000&auto=format&fit=crop&q=80');
+    setCoverImageUrl('');
     setCategory('Color Theory');
     setAuthorName('TRENRO Editorial');
     setReadTimeMinutes(5);
