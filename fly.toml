@@ -8,6 +8,12 @@ primary_region = 'ams'
 
 [build]
 
+[env]
+  NEXT_PUBLIC_SUPABASE_URL = "https://vocmdrglskcxzjqdbqvz.supabase.co"
+  NEXT_PUBLIC_SUPABASE_ANON_KEY = "sb_publishable_FAZpjIO2SWm5k8N6Ht-0iA_N6O5QPqH"
+  NEXT_PUBLIC_APP_URL = "https://trenro.fly.dev"
+
+
 [http_service]
   internal_port = 3000
   force_https = true

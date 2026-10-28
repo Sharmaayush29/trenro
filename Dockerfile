@@ -11,6 +11,9 @@ WORKDIR /app
 
 # Set production environment
 ENV NODE_ENV="production"
+ENV NEXT_PUBLIC_SUPABASE_URL="https://vocmdrglskcxzjqdbqvz.supabase.co"
+ENV NEXT_PUBLIC_SUPABASE_ANON_KEY="sb_publishable_FAZpjIO2SWm5k8N6Ht-0iA_N6O5QPqH"
+ENV NEXT_PUBLIC_APP_URL="https://trenro.fly.dev"
 
 
 # Throw-away build stage to reduce size of final image
