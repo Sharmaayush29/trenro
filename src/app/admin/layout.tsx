@@ -12,6 +12,8 @@ import {
   Lock,
 } from 'lucide-react';
 
+export const instant = false;
+
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const configured = isSupabaseConfigured();
 
