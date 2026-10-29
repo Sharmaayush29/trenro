@@ -5,12 +5,7 @@ const { spawn } = require('node:child_process')
 const env = { ...process.env }
 
 ;(async() => {
-  // If running the web server then prerender pages
-  if (process.argv.slice(-3).join(' ') === 'npm run start') {
-    await exec('npx next build --experimental-build-mode generate')
-  }
-
-  // launch application
+  // launch application immediately with zero cold-boot delay
   await exec(process.argv.slice(2).join(' '))
 })()
 
