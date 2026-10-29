@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 50MB limit for Supabase standard storage
+    // 50MB limit
     const MAX_SIZE = 50 * 1024 * 1024;
     if (file.size > MAX_SIZE) {
       return NextResponse.json(
@@ -34,44 +34,48 @@ export async function POST(req: NextRequest) {
     const supabaseAdmin = createAdminClient();
     if (!supabaseAdmin) {
       return NextResponse.json(
-        { error: 'Server database credentials are not configured. Please ensure SUPABASE_SERVICE_ROLE_KEY is set in Vercel environment variables.' },
+        { error: 'Server database credentials are not configured.' },
         { status: 503 }
       );
     }
 
-    // Ensure 'product-media' bucket exists with both image and video mime types
-    const { data: buckets } = await supabaseAdmin.storage.listBuckets();
-    if (!buckets?.some((b) => b.name === 'product-media')) {
+    const fileExt = file.name.split('.').pop()?.toLowerCase() || (isVideo ? 'mp4' : 'webp');
+    const folder = isVideo ? 'videos' : 'garments';
+    const cleanFileName = `${folder}/${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    // Direct fast upload without redundant listBuckets pre-flight
+    let { data, error: uploadError } = await supabaseAdmin.storage
+      .from('product-media')
+      .upload(cleanFileName, buffer, {
+        contentType: file.type || (isVideo ? 'video/mp4' : 'image/webp'),
+        cacheControl: '31536000',
+        upsert: true,
+      });
+
+    // If bucket was missing, create bucket on-demand and retry
+    if (uploadError && (uploadError.message?.includes('bucket') || (uploadError as any).statusCode === 404)) {
       await supabaseAdmin.storage.createBucket('product-media', {
         public: true,
         fileSizeLimit: 104857600,
         allowedMimeTypes: [
-          'image/png',
-          'image/jpeg',
-          'image/webp',
-          'image/gif',
-          'image/avif',
-          'video/mp4',
-          'video/webm',
-          'video/quicktime',
-          'video/ogg',
+          'image/png', 'image/jpeg', 'image/webp', 'image/gif', 'image/avif',
+          'video/mp4', 'video/webm', 'video/quicktime', 'video/ogg',
         ],
       });
+
+      const retry = await supabaseAdmin.storage
+        .from('product-media')
+        .upload(cleanFileName, buffer, {
+          contentType: file.type || (isVideo ? 'video/mp4' : 'image/webp'),
+          cacheControl: '31536000',
+          upsert: true,
+        });
+
+      data = retry.data;
+      uploadError = retry.error;
     }
-
-    const fileExt = file.name.split('.').pop()?.toLowerCase() || (isVideo ? 'mp4' : 'jpg');
-    const folder = isVideo ? 'videos' : 'garments';
-    const cleanFileName = `${folder}/${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-
-    const { data, error: uploadError } = await supabaseAdmin.storage
-      .from('product-media')
-      .upload(cleanFileName, buffer, {
-        contentType: file.type || (isVideo ? 'video/mp4' : 'image/jpeg'),
-        cacheControl: '31536000',
-        upsert: true,
-      });
 
     if (uploadError) {
       console.error('Storage upload error:', uploadError);
@@ -82,13 +86,11 @@ export async function POST(req: NextRequest) {
       .from('product-media')
       .getPublicUrl(cleanFileName);
 
-    // Save record into dedicated public.media_assets table
-    let savedMediaAsset = null;
-    try {
-      const title = customTitle.trim() || file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
-      const { data: insertedAsset } = await supabaseAdmin
-        .from('media_assets')
-        .insert({
+    // Async record in media_assets without slowing down the client response
+    const title = customTitle.trim() || file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+    (async () => {
+      try {
+        await supabaseAdmin.from('media_assets').insert({
           title,
           file_name: cleanFileName,
           media_type: isVideo ? 'video' : 'image',
@@ -96,24 +98,19 @@ export async function POST(req: NextRequest) {
           mime_type: file.type,
           file_size: file.size,
           category,
-        })
-        .select()
-        .single();
-
-      savedMediaAsset = insertedAsset;
-    } catch (dbErr) {
-      // Non-fatal if table not yet migrated, storage upload still succeeds
-      console.warn('Note: media_assets table insert skipped or pending migration:', dbErr);
-    }
+        });
+      } catch (err) {
+        console.warn('media_assets background record notice:', err);
+      }
+    })();
 
     return NextResponse.json({
       success: true,
       publicUrl,
-      path: data.path,
+      path: data?.path || cleanFileName,
       mediaType: isVideo ? 'video' : 'image',
       fileName: file.name,
       fileSize: file.size,
-      asset: savedMediaAsset,
     });
   } catch (err: any) {
     console.error('Admin upload handler exception:', err);
