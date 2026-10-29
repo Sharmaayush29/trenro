@@ -42,6 +42,11 @@ export function getRazorpayConfig(): RazorpayConfig {
  * 3. Falls back to verified Sandbox/Test credentials.
  */
 export async function getActiveRazorpayConfig(): Promise<RazorpayConfig> {
+  // If a test/sandbox key is explicitly injected (e.g. during automated test suites), prioritize it
+  if (process.env.RAZORPAY_KEY_ID?.startsWith('rzp_test_')) {
+    return getRazorpayConfig();
+  }
+
   try {
     const settings = await getStoreSettings();
     if (settings.isLiveMode && settings.liveKeyId && settings.liveKeySecret) {

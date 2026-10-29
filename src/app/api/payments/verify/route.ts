@@ -38,6 +38,7 @@ export async function POST(req: NextRequest) {
       razorpayOrderId,
       razorpayPaymentId,
       razorpaySignature,
+      keySecret: config.keySecret,
     });
 
     if (!isValid) {
