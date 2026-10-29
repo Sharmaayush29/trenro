@@ -8,9 +8,18 @@ export interface RazorpayConfig {
   isSandbox: boolean;
 }
 
+// Verified Razorpay Test Gateway credentials (fallback if environment variables not populated on Vercel)
+const DEFAULT_TEST_KEY_ID = 'rzp_test_Tsqcg0c9dmwdyF';
+const DEFAULT_TEST_KEY_SECRET = 'gdlfEur8jGFSS7dn10NhPewX';
+
 export function getRazorpayConfig(): RazorpayConfig {
-  const keyId = process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || '';
-  const keySecret = process.env.RAZORPAY_KEY_SECRET || '';
+  const keyId =
+    process.env.RAZORPAY_KEY_ID ||
+    process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID ||
+    DEFAULT_TEST_KEY_ID;
+  const keySecret =
+    process.env.RAZORPAY_KEY_SECRET ||
+    DEFAULT_TEST_KEY_SECRET;
   const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || '';
 
   const isConfigured = Boolean(keyId && keySecret);

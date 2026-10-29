@@ -54,25 +54,29 @@ export async function POST(req: NextRequest) {
       const supabase = createAdminClient() || (await createClient());
 
       if (supabase) {
-        if (event === 'payment.captured' || event === 'order.paid') {
-          // Idempotent update: mark order as Paid
-          await supabase
-            .from('orders')
-            .update({
-              payment_status: 'Paid',
-              status: 'Confirmed',
-              payment_id: razorpayPaymentId,
-              updated_at: new Date().toISOString(),
-            })
-            .or(`order_reference.eq.${receiptRef},razorpay_order_id.eq.${razorpayOrderId}`);
-        } else if (event === 'payment.failed') {
-          await supabase
-            .from('orders')
-            .update({
-              payment_status: 'Failed',
-              updated_at: new Date().toISOString(),
-            })
-            .or(`order_reference.eq.${receiptRef},razorpay_order_id.eq.${razorpayOrderId}`);
+        try {
+          if (event === 'payment.captured' || event === 'order.paid') {
+            // Idempotent update: mark order as captured
+            await supabase
+              .from('orders')
+              .update({
+                payment_status: 'captured',
+                status: 'Confirmed',
+                provider_payment_id: razorpayPaymentId,
+                updated_at: new Date().toISOString(),
+              })
+              .or(`order_number.eq.${receiptRef},provider_order_id.eq.${razorpayOrderId}`);
+          } else if (event === 'payment.failed') {
+            await supabase
+              .from('orders')
+              .update({
+                payment_status: 'failed',
+                updated_at: new Date().toISOString(),
+              })
+              .or(`order_number.eq.${receiptRef},provider_order_id.eq.${razorpayOrderId}`);
+          }
+        } catch (dbErr) {
+          console.warn('Non-fatal: webhook order update error:', dbErr);
         }
       }
     }

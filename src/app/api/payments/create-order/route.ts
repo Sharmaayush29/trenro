@@ -19,11 +19,17 @@ export async function POST(req: NextRequest) {
     const validatedItems = [];
     const supabase = createAdminClient() || (await createClient());
 
+    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
     for (const item of items) {
       let dbProduct: any = null;
-      if (supabase) {
-        const { data } = await supabase.from('products').select('*').eq('id', item.id).maybeSingle();
-        dbProduct = data;
+      if (supabase && typeof item.id === 'string' && UUID_REGEX.test(item.id)) {
+        try {
+          const { data } = await supabase.from('products').select('*').eq('id', item.id).maybeSingle();
+          dbProduct = data;
+        } catch {
+          // Non-fatal, use client provided details
+        }
       }
       const unitPrice = dbProduct ? Number(dbProduct.price_inr) : Number(item.price_inr) || 1299;
       const quantity = Math.max(1, Math.min(10, Number(item.quantity) || 1));
@@ -106,7 +112,7 @@ export async function POST(req: NextRequest) {
       amountInINR: serverFinalTotal,
       orderReference: ref,
       customer: {
-        name: shippingAddress?.full_name,
+        name: shippingAddress?.full_name || shippingAddress?.fullName,
         email: shippingAddress?.email,
         phone: shippingAddress?.phone,
       },
@@ -115,8 +121,52 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Optionally pre-persist order to Supabase orders table
+    if (result.success && supabase) {
+      try {
+        const { data: insertedOrder } = await supabase
+          .from('orders')
+          .insert({
+            order_number: ref,
+            subtotal: serverSubtotal,
+            shipping: serverShippingFee,
+            discount: serverDiscount,
+            total: serverFinalTotal,
+            customer_name: shippingAddress?.full_name || shippingAddress?.fullName || 'Guest Customer',
+            customer_email: shippingAddress?.email || 'guest@trenro.atelier',
+            customer_phone: shippingAddress?.phone || '0000000000',
+            shipping_address: shippingAddress?.address || shippingAddress?.address_line1 || 'Address',
+            shipping_city: shippingAddress?.city || 'City',
+            shipping_state: shippingAddress?.state || 'State',
+            shipping_pincode: shippingAddress?.pincode || shippingAddress?.postal_code || '000000',
+            payment_method: 'upi',
+            payment_status: 'pending',
+            provider_order_id: result.orderId,
+            notes: couponCode ? `Coupon applied: ${couponCode}` : undefined,
+          })
+          .select('id')
+          .maybeSingle();
+
+        if (insertedOrder?.id && validatedItems.length > 0) {
+          const itemsPayload = validatedItems.map((v) => ({
+            order_id: insertedOrder.id,
+            product_id: UUID_REGEX.test(v.id) ? v.id : undefined,
+            product_name: v.name,
+            size: v.size,
+            quantity: v.quantity,
+            unit_price: v.price_inr,
+            total_price: v.price_inr * v.quantity,
+          }));
+          await supabase.from('order_items').insert(itemsPayload);
+        }
+      } catch (dbErr) {
+        console.warn('Non-fatal: could not pre-create order row in Supabase:', dbErr);
+      }
+    }
+
     return NextResponse.json({
       ...result,
+      keyId: result.keyId || config.keyId,
       orderReference: ref,
       subtotalINR: serverSubtotal,
       discountINR: serverDiscount,

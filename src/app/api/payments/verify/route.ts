@@ -54,16 +54,32 @@ export async function POST(req: NextRequest) {
 
     // Persist to database if Supabase is connected
     const supabaseAdmin = createAdminClient();
-    if (supabaseAdmin && orderReference) {
-      await supabaseAdmin
-        .from('orders')
-        .update({
-          payment_status: 'Paid',
-          status: 'Confirmed',
-          payment_id: razorpayPaymentId,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('order_reference', orderReference);
+    if (supabaseAdmin) {
+      try {
+        if (orderReference) {
+          await supabaseAdmin
+            .from('orders')
+            .update({
+              payment_status: 'captured',
+              status: 'Confirmed',
+              provider_payment_id: razorpayPaymentId,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('order_number', orderReference);
+        } else if (razorpayOrderId) {
+          await supabaseAdmin
+            .from('orders')
+            .update({
+              payment_status: 'captured',
+              status: 'Confirmed',
+              provider_payment_id: razorpayPaymentId,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('provider_order_id', razorpayOrderId);
+        }
+      } catch (dbErr) {
+        console.warn('Non-fatal: could not update order status in Supabase:', dbErr);
+      }
     }
 
     return NextResponse.json({
