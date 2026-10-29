@@ -283,10 +283,47 @@ export default function AdminProductsPage() {
     }
   };
 
-  const handleVideoFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleVideoFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      alert('For performance, please host video clips on a CDN/streaming provider and enter the direct video URL.');
+    if (!file) return;
+
+    if (!file.type.startsWith('video/')) {
+      alert('Please upload a valid video file (MP4, WebM, QuickTime).');
+      return;
+    }
+
+    if (file.size > 50 * 1024 * 1024) {
+      alert('Video file size exceeds maximum 50MB limit.');
+      return;
+    }
+
+    setIsUploadingMedia(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('category', 'product_video');
+
+      const res = await fetch('/api/admin/upload-media', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to upload video.');
+      }
+
+      setVideoUrl(data.publicUrl);
+      setIsDirty(true);
+      setFeedback({ type: 'success', message: 'Runway video uploaded successfully to media storage!' });
+      setTimeout(() => setFeedback(null), 3000);
+    } catch (err: any) {
+      alert(`Video upload failed: ${err.message || 'Unknown error'}`);
+    } finally {
+      setIsUploadingMedia(false);
+      if (videoFileInputRef.current) {
+        videoFileInputRef.current.value = '';
+      }
     }
   };
 

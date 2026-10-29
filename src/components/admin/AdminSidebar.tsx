@@ -14,6 +14,7 @@ import {
   Package,
   CreditCard,
   Tag,
+  Image as ImageIcon,
 } from 'lucide-react';
 
 export default function AdminSidebar() {
@@ -22,6 +23,7 @@ export default function AdminSidebar() {
   const navItems = [
     { name: 'Store Overview', href: '/admin', icon: LayoutDashboard },
     { name: 'Apparel Products CMS', href: '/admin/products', icon: ShoppingBag },
+    { name: 'Media Library (Photos/Videos)', href: '/admin/media', icon: ImageIcon },
     { name: 'Coupons & Vouchers', href: '/admin/coupons', icon: Tag },
     { name: 'Customer Orders', href: '/admin/orders', icon: Package },
     { name: 'UPI & Payments', href: '/admin/payments', icon: CreditCard },

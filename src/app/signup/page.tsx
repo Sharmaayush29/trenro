@@ -59,6 +59,44 @@ export default function SignupPage() {
 
       const regData = await regRes.json();
       if (!regRes.ok) {
+        // Resilient fallback: if server service role key is not yet set in Vercel, use standard client signup
+        if (regRes.status === 503) {
+          const supabaseFallback = getSupabaseBrowserClient();
+          if (supabaseFallback) {
+            const { data: clientSignUpData, error: clientSignUpErr } = await supabaseFallback.auth.signUp({
+              email: email.trim().toLowerCase(),
+              password,
+              options: {
+                data: {
+                  display_name: displayName.trim(),
+                },
+              },
+            });
+
+            if (clientSignUpErr) {
+              throw new Error(clientSignUpErr.message);
+            }
+
+            if (clientSignUpData.session && clientSignUpData.user) {
+              const newUser = {
+                id: clientSignUpData.user.id,
+                display_name: displayName.trim(),
+                email: email.trim().toLowerCase(),
+                role: (email.trim().toLowerCase() === 'ayush@gmail.com' ? 'admin' : 'user') as 'admin' | 'user',
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              };
+              setUserProfile(newUser);
+              setSuccessMsg('Account created & signed in! Redirecting to dashboard...');
+              setTimeout(() => router.push('/dashboard'), 500);
+              return;
+            } else {
+              setSuccessMsg('Registration received! You can now sign in with your credentials.');
+              setTimeout(() => router.push('/login'), 1200);
+              return;
+            }
+          }
+        }
         throw new Error(regData.error || 'Failed to create account.');
       }
 
