@@ -45,6 +45,7 @@ export async function GET() {
   const { data: coupons, error } = await auth.supabaseAdmin!
     .from('coupons')
     .select('*')
+    .not('code', 'like', 'SYS_%')
     .order('created_at', { ascending: false });
 
   if (error) {

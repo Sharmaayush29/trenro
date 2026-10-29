@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyPaymentSignature, getRazorpayConfig } from '@/lib/payments/razorpay';
+import { verifyPaymentSignature, getActiveRazorpayConfig } from '@/lib/payments/razorpay';
 import { createAdminClient } from '@/lib/supabase/server';
 
 export async function POST(req: NextRequest) {
@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
     const razorpaySignature = body.razorpay_signature || body.razorpaySignature;
     const orderReference = body.order_reference || body.orderReference;
 
-    const config = getRazorpayConfig();
+    const config = await getActiveRazorpayConfig();
 
     if (!config.isConfigured) {
       return NextResponse.json(

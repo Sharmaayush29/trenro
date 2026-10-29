@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createRazorpayOrder, getRazorpayConfig } from '@/lib/payments/razorpay';
+import { createRazorpayOrder, getActiveRazorpayConfig } from '@/lib/payments/razorpay';
 import { createAdminClient, createClient } from '@/lib/supabase/server';
+import { getStoreSettings, calculateShippingFee } from '@/lib/settings/store-settings';
 
 export async function POST(req: NextRequest) {
   try {
@@ -83,14 +84,15 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Server-side shipping fee calculation (Complimentary over ₹999)
+    // Server-side shipping fee calculation based on Admin Store Settings
+    const storeSettings = await getStoreSettings();
     const discountedTotal = Math.max(0, serverSubtotal - serverDiscount);
-    const serverShippingFee = discountedTotal >= 999 ? 0 : 99;
+    const serverShippingFee = calculateShippingFee(discountedTotal, storeSettings);
     const serverFinalTotal = discountedTotal + serverShippingFee;
 
     const ref = orderReference || `TRN-${Math.floor(100000 + Math.random() * 900000)}`;
 
-    const config = getRazorpayConfig();
+    const config = await getActiveRazorpayConfig();
 
     if (!config.isConfigured) {
       // Honest setup-required reporting

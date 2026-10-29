@@ -62,6 +62,9 @@ export default function CheckoutPage() {
     items,
     subtotal,
     shipping,
+    isFreeDeliveryForAll,
+    freeDeliveryThreshold,
+    shippingFee,
     discount,
     discountCode,
     applyDiscountCode,
@@ -69,6 +72,17 @@ export default function CheckoutPage() {
     itemCount,
     placeOrder,
   } = useCart();
+
+  const handleAppendUpiHandle = (handle: string) => {
+    if (!upiId) {
+      setUpiId(formData.phone ? `${formData.phone}${handle}` : `user${handle}`);
+    } else if (upiId.includes('@')) {
+      const prefix = upiId.split('@')[0];
+      setUpiId(`${prefix}${handle}`);
+    } else {
+      setUpiId(`${upiId}${handle}`);
+    }
+  };
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -266,15 +280,43 @@ export default function CheckoutPage() {
         key: razorpayKey,
         amount: Math.round(orderData.amountInINR * 100),
         currency: 'INR',
-        name: 'TRENRO',
+        name: 'TRENRO Atelier',
         description: 'TRENRO Engineered Menswear Atelier Order',
         order_id: orderData.orderId,
         prefill: {
           name: formData.fullName,
           email: formData.email,
           contact: formData.phone,
-          ...(paymentMethod === 'upi' ? { method: 'upi' } : paymentMethod === 'card' ? { method: 'card' } : {}),
-          ...(paymentMethod === 'upi' && upiId.trim() ? { vpa: upiId.trim() } : {}),
+          ...(upiId.trim() ? { vpa: upiId.trim() } : {}),
+        },
+        config: {
+          display: {
+            blocks: {
+              upi: {
+                name: 'Pay using UPI / QR Code (Google Pay, PhonePe, Paytm)',
+                instruments: [
+                  {
+                    method: 'upi',
+                  },
+                ],
+              },
+              cards: {
+                name: 'Cards & NetBanking',
+                instruments: [
+                  {
+                    method: 'card',
+                  },
+                  {
+                    method: 'netbanking',
+                  },
+                ],
+              },
+            },
+            sequence: paymentMethod === 'upi' ? ['block.upi', 'block.cards'] : ['block.cards', 'block.upi'],
+            preferences: {
+              show_default_blocks: true,
+            },
+          },
         },
         notes: {
           order_reference: orderRef,
@@ -402,7 +444,7 @@ export default function CheckoutPage() {
           Complete Your TRENRO Order
         </h1>
         <p className="text-xs text-[#737373] mt-1">
-          Fast express shipping across India • 7-day doorstep size exchange guarantee
+          Fast express shipping across India • {isFreeDeliveryForAll ? '100% Free Express Delivery' : `Free delivery above ₹${freeDeliveryThreshold}`} • 7-day doorstep exchange
         </p>
       </div>
 
@@ -638,16 +680,35 @@ export default function CheckoutPage() {
                       Pay directly via any UPI app (Google Pay, PhonePe, Paytm, BHIM, CRED) or scan dynamic UPI QR code.
                     </p>
                     {paymentMethod === 'upi' && (
-                      <div className="pt-2 space-y-1.5">
+                      <div className="pt-3 space-y-2.5 border-t border-[#E5E0D8]/60 mt-2">
+                        <label className="text-[11px] font-bold text-[#171717] block">
+                          Enter your UPI ID / VPA for Direct Payment:
+                        </label>
                         <input
                           type="text"
-                          placeholder="UPI ID / VPA (optional, e.g. name@okhdfcbank)"
+                          placeholder="e.g. 9876543210@paytm or name@okhdfcbank"
                           value={upiId}
                           onChange={(e) => setUpiId(e.target.value)}
-                          className="w-full px-3 py-2 text-xs bg-white border border-[#E5E0D8] rounded-xl text-[#171717] focus:outline-hidden focus:border-[#BD8B52]"
+                          className="w-full px-3 py-2 text-xs bg-white border border-[#E5E0D8] rounded-xl text-[#171717] font-medium focus:outline-hidden focus:border-[#BD8B52]"
                         />
-                        <p className="text-[10px] text-[#737373]">
-                          Leave blank to choose app or scan QR directly on the secure Razorpay payment screen.
+
+                        {/* Quick Handle Helper Chips */}
+                        <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                          <span className="text-[10px] text-[#737373]">Quick Select:</span>
+                          {['@okhdfcbank', '@okaxis', '@okicici', '@ybl', '@paytm', '@ibl'].map((handle) => (
+                            <button
+                              key={handle}
+                              type="button"
+                              onClick={() => handleAppendUpiHandle(handle)}
+                              className="px-2 py-0.5 rounded-md bg-[#FAF8F5] hover:bg-[#171717] hover:text-white text-[#737373] text-[10px] font-semibold transition-colors border border-[#E5E0D8] cursor-pointer"
+                            >
+                              {handle}
+                            </button>
+                          ))}
+                        </div>
+
+                        <p className="text-[10px] text-[#737373] leading-relaxed">
+                          ⚡ <strong>Direct Payment:</strong> Enter your UPI ID above to trigger a direct collect request on your UPI app, or leave blank to scan dynamic QR code or pick Google Pay / PhonePe directly on the payment screen.
                         </p>
                         {errors.upi && <p className="text-[10px] text-[#DC2626] mt-1">{errors.upi}</p>}
                       </div>
@@ -806,6 +867,14 @@ export default function CheckoutPage() {
                   {shipping === 0 ? <span className="text-[#15803D] font-bold">FREE</span> : formatCurrencyINR(shipping)}
                 </span>
               </div>
+              {!isFreeDeliveryForAll && subtotal < freeDeliveryThreshold && subtotal > 0 && (
+                <div className="p-2 bg-amber-50 border border-amber-200/80 rounded-xl text-[10px] text-amber-900 font-medium flex items-center justify-between">
+                  <span>Add {formatCurrencyINR(freeDeliveryThreshold - subtotal)} more for FREE Delivery!</span>
+                  <Link href="/outfits" className="underline font-bold text-[#BD8B52]">
+                    Explore +
+                  </Link>
+                </div>
+              )}
               <div className="flex justify-between text-base font-black text-[#171717] pt-3 border-t border-[#E5E0D8]">
                 <span>Total Amount</span>
                 <span>{formatCurrencyINR(total)}</span>

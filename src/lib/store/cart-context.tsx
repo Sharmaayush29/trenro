@@ -18,6 +18,9 @@ interface CartContextType {
   clearCart: () => void;
   subtotal: number;
   shipping: number;
+  isFreeDeliveryForAll: boolean;
+  freeDeliveryThreshold: number;
+  shippingFee: number;
   discount: number;
   discountCode: string;
   applyDiscountCode: (code: string) => Promise<{ success: boolean; message: string; discountAmount?: number }>;
@@ -49,6 +52,9 @@ const CartContext = createContext<CartContextType>({
   clearCart: () => {},
   subtotal: 0,
   shipping: 0,
+  isFreeDeliveryForAll: false,
+  freeDeliveryThreshold: 999,
+  shippingFee: 99,
   discount: 0,
   discountCode: '',
   applyDiscountCode: async () => ({ success: false, message: 'Not initialized' }),
@@ -132,11 +138,44 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [discountCode, hasLoaded]);
 
+  // Dynamic shipping rule from Admin Store Settings
+  const [shippingRule, setShippingRule] = useState<{
+    isFreeDeliveryForAll: boolean;
+    freeDeliveryThreshold: number;
+    shippingFee: number;
+  }>({
+    isFreeDeliveryForAll: false,
+    freeDeliveryThreshold: 999,
+    shippingFee: 99,
+  });
+
+  useEffect(() => {
+    fetch('/api/settings/shipping')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data) {
+          setShippingRule({
+            isFreeDeliveryForAll: Boolean(data.isFreeDeliveryForAll),
+            freeDeliveryThreshold: typeof data.freeDeliveryThreshold === 'number' ? data.freeDeliveryThreshold : 999,
+            shippingFee: typeof data.shippingFee === 'number' ? data.shippingFee : 99,
+          });
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   // Subtotal calculation
   const subtotal = items.reduce((sum, item) => sum + item.product.price_inr * item.quantity, 0);
 
-  // Complimentary express delivery above ₹999, else standard ₹99
-  const shipping = subtotal === 0 || subtotal >= 999 ? 0 : 99;
+  // Dynamic delivery charge calculation
+  const shipping =
+    subtotal === 0
+      ? 0
+      : shippingRule.isFreeDeliveryForAll
+      ? 0
+      : subtotal >= shippingRule.freeDeliveryThreshold
+      ? 0
+      : shippingRule.shippingFee;
 
   // Recalculate discount whenever subtotal or coupon meta changes
   useEffect(() => {
@@ -409,6 +448,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
         clearCart,
         subtotal,
         shipping,
+        isFreeDeliveryForAll: shippingRule.isFreeDeliveryForAll,
+        freeDeliveryThreshold: shippingRule.freeDeliveryThreshold,
+        shippingFee: shippingRule.shippingFee,
         discount,
         discountCode,
         applyDiscountCode,

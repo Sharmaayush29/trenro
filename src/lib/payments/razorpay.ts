@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { getStoreSettings } from '@/lib/settings/store-settings';
 
 export interface RazorpayConfig {
   keyId: string;
@@ -34,6 +35,31 @@ export function getRazorpayConfig(): RazorpayConfig {
   };
 }
 
+/**
+ * Resolves active Razorpay credentials:
+ * 1. Checks if Admin configured Live Key in Store Settings with Live Mode toggled ON.
+ * 2. Checks Environment Variables (RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET).
+ * 3. Falls back to verified Sandbox/Test credentials.
+ */
+export async function getActiveRazorpayConfig(): Promise<RazorpayConfig> {
+  try {
+    const settings = await getStoreSettings();
+    if (settings.isLiveMode && settings.liveKeyId && settings.liveKeySecret) {
+      const isSandbox = settings.liveKeyId.startsWith('rzp_test_');
+      return {
+        keyId: settings.liveKeyId,
+        keySecret: settings.liveKeySecret,
+        webhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET || '',
+        isConfigured: true,
+        isSandbox,
+      };
+    }
+  } catch {
+    // Non-fatal, fallback to default config
+  }
+  return getRazorpayConfig();
+}
+
 export interface CreateOrderParams {
   amountInINR: number;
   orderReference: string;
@@ -60,7 +86,7 @@ export interface PaymentOrderResult {
  * Server-side creation of a Razorpay Payment Order with official paise conversion
  */
 export async function createRazorpayOrder(params: CreateOrderParams): Promise<PaymentOrderResult> {
-  const config = getRazorpayConfig();
+  const config = await getActiveRazorpayConfig();
 
   if (!config.isConfigured) {
     return {
