@@ -385,7 +385,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       category: productData.category,
       sub_category: productData.sub_category || productData.category,
       brand: productData.brand || 'TRENRO',
-      retailer_name: 'TRENRO',
+      retailer_name: 'TRENRO Official',
       product_url: productData.product_url || `/products/${slug.trim()}`,
       image_url: productData.image_url,
       images: productData.images && productData.images.length > 0 ? productData.images : [productData.image_url],
@@ -404,11 +404,43 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       price_verified_at: new Date().toISOString(),
     };
 
-    const { data, error } = await supabase
+    // 1. Try server-side API first (bypasses RLS & handles missing schema columns automatically)
+    try {
+      const res = await fetch('/api/admin/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(insertPayload),
+      });
+      const data = await res.json();
+      if (res.ok && data.success && data.product) {
+        setProducts((prev) => [data.product as Product, ...prev]);
+        return true;
+      }
+    } catch {
+      // Fallback to direct client
+    }
+
+    // 2. Client-side fallback with PGRST204 resilience
+    let { data, error } = await supabase
       .from('products')
       .insert(insertPayload)
       .select()
       .single();
+
+    if (error && (error.code === 'PGRST204' || error.message?.includes('schema cache'))) {
+      const fallbackPayload: Record<string, any> = { ...insertPayload };
+      delete fallbackPayload.slug;
+      delete fallbackPayload.sub_category;
+
+      const retry = await supabase
+        .from('products')
+        .insert(fallbackPayload)
+        .select()
+        .single();
+
+      data = retry.data;
+      error = retry.error;
+    }
 
     if (error) {
       console.error('Supabase product insert error:', error);
@@ -433,17 +465,52 @@ export function DemoProvider({ children }: { children: ReactNode }) {
       throw new Error('Supabase client failed to initialize.');
     }
 
-    const updatePayload = {
+    // 1. Try server-side API first
+    try {
+      const res = await fetch('/api/admin/products', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, ...updates }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success && data.product) {
+        setProducts((prev) =>
+          prev.map((p) => (p.id === id ? { ...p, ...data.product } : p))
+        );
+        return true;
+      }
+    } catch {
+      // Fallback
+    }
+
+    // 2. Client-side fallback
+    const updatePayload: Record<string, any> = {
       ...updates,
       updated_at: new Date().toISOString(),
     };
 
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from('products')
       .update(updatePayload)
       .eq('id', id)
       .select()
       .single();
+
+    if (error && (error.code === 'PGRST204' || error.message?.includes('schema cache'))) {
+      const fallbackPayload: Record<string, any> = { ...updatePayload };
+      delete fallbackPayload.slug;
+      delete fallbackPayload.sub_category;
+
+      const retry = await supabase
+        .from('products')
+        .update(fallbackPayload)
+        .eq('id', id)
+        .select()
+        .single();
+
+      data = retry.data;
+      error = retry.error;
+    }
 
     if (error) {
       console.error('Supabase product update error:', error);
@@ -465,6 +532,20 @@ export function DemoProvider({ children }: { children: ReactNode }) {
     const supabase = getSupabaseBrowserClient();
     if (!supabase) {
       throw new Error('Supabase client failed to initialize.');
+    }
+
+    try {
+      const res = await fetch('/api/admin/products', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+      if (res.ok) {
+        setProducts((prev) => prev.filter((p) => p.id !== id));
+        return true;
+      }
+    } catch {
+      // Fallback
     }
 
     const { error } = await supabase.from('products').delete().eq('id', id);
